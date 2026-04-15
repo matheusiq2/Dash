@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Faturamento 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
+  .header{background:#1a1a2e;color:#fff;padding:18px 32px;display:flex;align-items:center;justify-content:space-between}
+  .header h1{font-size:19px;font-weight:600;letter-spacing:0.3px}
+  .badge{background:#2563eb;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:12px}
+  .container{max-width:1300px;margin:0 auto;padding:26px 24px}
+  .sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .sec-label::after{content:'';flex:1;height:1px;background:#e5e7eb}
+  .divider{height:2px;background:linear-gradient(to right,#e5e7eb,transparent);margin:32px 0}
+  .month-bar{background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .month-bar-label{font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap}
+  .month-btn{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:7px;padding:5px 13px;font-size:13px;cursor:pointer;font-weight:500;color:#374151;transition:all 0.12s}
+  .month-btn.active{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+  .month-btn:hover:not(.active){background:#e5e7eb}
+  .mes-total-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .mes-total{border-radius:12px;padding:18px 20px;color:#fff}
+  .mes-total-label{font-size:11px;font-weight:600;opacity:0.7;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.8px}
+  .mes-total-val{font-size:26px;font-weight:700;line-height:1.2}
+  .mes-total-sub{font-size:11px;opacity:0.6;margin-top:4px}
+  .mes-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:13px;margin-bottom:20px}
+  .mes-kpi{background:#fff;border-radius:12px;padding:16px 18px;border:1px solid #e5e7eb}
+  .mes-kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .mes-kpi-name{font-size:12px;font-weight:600;color:#6b7280}
+  .mes-kpi-badge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px}
+  .mes-kpi-values{display:grid;grid-template-columns:1fr 1px 1fr;gap:10px;align-items:center;margin-bottom:10px}
+  .mes-kpi-block{display:flex;flex-direction:column;gap:2px}
+  .mes-kpi-block-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#9ca3af}
+  .mes-kpi-block-val{font-size:17px;font-weight:700;color:#1a1a2e;line-height:1.2}
+  .mes-kpi-sep{background:#e5e7eb;height:36px;width:1px}
+  .mes-kpi-bar-bg{background:#f3f4f6;border-radius:99px;height:6px;overflow:hidden}
+  .mes-kpi-bar{height:6px;border-radius:99px;transition:width 0.4s}
+  .ok{background:#dcfce7;color:#15803d}
+  .warn{background:#fef9c3;color:#854d0e}
+  .bad{background:#fee2e2;color:#b91c1c}
+  .chart-wrap{background:#fff;border-radius:12px;padding:20px;border:1px solid #e5e7eb;margin-bottom:20px}
+  .chart-title{font-size:13px;font-weight:600;margin-bottom:6px;color:#374151}
+  .legend{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:#6b7280}
+  .legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+  .acum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:13px;margin-bottom:20px}
+  .acum-kpi{background:#fff;border-radius:12px;padding:16px 18px;border:1px solid #e5e7eb}
+  .acum-kpi-label{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px}
+  .acum-kpi-val{font-size:20px;font-weight:700;color:#1a1a2e;margin-bottom:3px}
+  .acum-kpi-sub{font-size:12px;color:#6b7280}
+  .card{background:#fff;border-radius:12px;padding:22px;border:1px solid #e5e7eb;margin-bottom:20px}
+  .card-header{font-size:14px;font-weight:600;margin-bottom:16px;color:#1a1a2e;display:flex;align-items:center;gap:8px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:9px 12px;color:#6b7280;font-weight:600;border-bottom:2px solid #e5e7eb;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+  td{padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#374151}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#f9fafb}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  footer{text-align:center;padding:18px;font-size:12px;color:#9ca3af}
+  @media(max-width:750px){.mes-total-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center">
+    <h1>◈ Dashboard — Faturamento 2026</h1>
+    <span class="badge">Somente visualização</span>
+  </div>
+  <span style="font-size:13px;opacity:0.5" id="updated-at"></span>
+</div>
+
+<div class="container">
+
+  <div class="sec-label">Faturamento do mês</div>
+
+  <div class="month-bar">
+    <span class="month-bar-label">Selecione o mês:</span>
+    <div id="month-selector" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+
+  <div class="mes-total-grid" id="mes-totais"></div>
+  <div class="mes-kpi-grid" id="mes-kpi-grid"></div>
+
+  <div class="chart-wrap">
+    <div class="chart-title" id="bar-title">Meta vs Realizado por modalidade</div>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#3b82f6;opacity:0.5"></span>Meta</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#16a34a"></span>Realizado — atingido</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#d97706"></span>Realizado — próximo</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#dc2626"></span>Realizado — abaixo</span>
+    </div>
+    <div style="position:relative;height:330px"><canvas id="barChart" role="img" aria-label="Meta vs Realizado por modalidade no mês selecionado">Meta vs Realizado por modalidade.</canvas></div>
+  </div>
+
+  <div style="height:2px;background:#e5e7eb;margin:28px 0"></div>
+  <div class="sec-label">Faturamento acumulado anual</div>
+
+  <div class="acum-grid" id="acum-kpis"></div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Evolução mensal — total geral (R$)</div>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#3b82f6;opacity:0.6"></span>Meta mensal</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#16a34a"></span>Realizado</span>
+    </div>
+    <div style="position:relative;height:270px"><canvas id="lineChart" role="img" aria-label="Evolução mensal meta e realizado">Evolução mensal.</canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M3 15l4-5 4 3 5-7"/></svg>
+      Resumo acumulado por modalidade
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Modalidade</th>
+            <th class="num">Meta anual</th>
+            <th class="num">Realizado acum.</th>
+            <th class="num">% Atingido</th>
+            <th class="num">Gap acumulado</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<footer>Dashboard — apenas visualização, sem edição &nbsp;|&nbsp; Dados atualizados via planilha base</footer>
+
+<script>
+const MESES=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+const DATA={
+  'Venda':         {meta:[140000,90000,90000,90000,140000,140000,140000,140000,140000,140000,140000,140000],real:[159600,48600,35000,null,null,null,null,null,null,null,null,null]},
+  'Água Gelada':   {meta:[237550,245438,253805,269174,285023,300474,316405,331939,347954,363572,379671,398813],real:[213798,279650,261969.73,null,null,null,null,null,null,null,null,null]},
+  'Osmose Fixo':   {meta:[404338,407603,414580,421581,428607,435657,442732,449831,458806,467811,478699,487774],real:[396974,398015,388896,null,null,null,null,null,null,null,null,null]},
+  'Adesão':        {meta:[86045,86301,86557,86831,87069,87325,87581,87837,88093,88349,88605,88861],real:[85281.36,84578.74,84256.02,null,null,null,null,null,null,null,null,null]},
+  'P. Assinatura': {meta:[41420,41420,43491,43491,43491,43491,43491,43491,43491,43491,43491,43491],real:[45222.18,51822.34,52802.11,null,null,null,null,null,null,null,null,null]},
+  'Comodato':      {meta:[183600,176000,168288,109500,78400,65000,60000,61600,60000,57600,52800,49000],real:[165874.07,148313.3,93494.8,null,null,null,null,null,null,null,null,null]},
+  'Gasei/Ins/Comp':{meta:[37500,37500,37500,39500,39500,39500,41500,41500,41500,43500,43500,43500],real:[45587.36,130232,47283.2,null,null,null,null,null,null,null,null,null]},
+  'Eventos':       {meta:[0,0,8000,8000,8000,8000,8000,8000,8000,8000,8000,8000],real:[2970,0,56402,null,null,null,null,null,null,null,null,null]},
+  'Frete/Person.': {meta:[10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000],real:[9983.6,36053.04,39609.7,null,null,null,null,null,null,null,null,null]},
+  'Royalties':     {meta:[5700,5700,5700,5700,5700,5700,5700,5700,5700,5700,5700,5700],real:[56647.59,5465.28,5024.32,null,null,null,null,null,null,null,null,null]},
+};
+
+const MODS=Object.keys(DATA);
+
+function fmtFull(v){if(v===null||v===undefined)return'—';const neg=v<0;const abs=Math.abs(Math.round(v));return(neg?'- ':'')+'R$ '+abs.toLocaleString('pt-BR');}
+function fmtK(v){if(v===null||v===undefined)return'—';const neg=v<0;const abs=Math.abs(v);let s;if(abs>=1000000)s='R$ '+(abs/1000000).toFixed(2)+'M';else if(abs>=1000)s='R$ '+(abs/1000).toFixed(1)+'k';else s='R$ '+Math.round(abs);return(neg?'- ':'')+s;}
+function pc(r,m){if(!m)return null;if(r===null||r===undefined)return null;return r/m;}
+function realSum(arr){return arr.reduce((a,v)=>a+(v!==null?v:0),0);}
+function bColor(p){if(p===null)return'#d1d5db';if(p>=1)return'#16a34a';if(p>=0.8)return'#d97706';return'#dc2626';}
+function stInfo(p){if(p===null)return{label:'Sem dados',cls:'warn'};if(p>=1)return{label:'Atingida',cls:'ok'};if(p>=0.8)return{label:'Próximo',cls:'warn'};return{label:'Abaixo',cls:'bad'};}
+
+let selMes=0;
+for(let i=11;i>=0;i--){if(MODS.some(m=>DATA[m].real[i]!==null)){selMes=i;break;}}
+
+document.getElementById('updated-at').textContent='Atualizado em: '+new Date().toLocaleDateString('pt-BR');
+
+function buildSelector(){
+  const el=document.getElementById('month-selector');
+  MESES.forEach((m,i)=>{
+    const btn=document.createElement('button');
+    btn.className='month-btn'+(i===selMes?' active':'');
+    btn.textContent=m;
+    if(!MODS.some(mod=>DATA[mod].real[i]!==null))btn.style.opacity='0.38';
+    btn.onclick=()=>{selMes=i;document.querySelectorAll('.month-btn').forEach((b,j)=>b.classList.toggle('active',j===i));updateMes();};
+    el.appendChild(btn);
+  });
+}
+
+function updateTotais(mi){
+  const tMeta=MODS.reduce((a,m)=>a+DATA[m].meta[mi],0);
+  const hasR=MODS.some(m=>DATA[m].real[mi]!==null);
+  const tReal=MODS.reduce((a,m)=>{const r=DATA[m].real[mi];return a+(r!==null?r:0);},0);
+  const p=hasR?pc(tReal,tMeta):null;
+  const gap=hasR?tReal-tMeta:null;
+  const bgMeta='#1e3a5f';
+  const bgReal='#1e4d3a';
+  const bgPct=p===null?'#374151':p>=1?'#14532d':p>=0.8?'#713f12':'#7f1d1d';
+  const bgGap=gap===null?'#374151':gap>=0?'#14532d':'#7f1d1d';
+  document.getElementById('mes-totais').innerHTML=[
+    {bg:bgMeta,label:'Meta do mês',val:fmtFull(tMeta),sub:MESES[mi]+' 2026'},
+    {bg:bgReal,label:'Realizado',val:hasR?fmtFull(tReal):'Não lançado',sub:MESES[mi]+' 2026'},
+    {bg:bgPct,label:'% Atingimento',val:p!==null?Math.round(p*100)+'%':'—',sub:'sobre a meta do mês'},
+    {bg:bgGap,label:'Gap do mês',val:gap!==null?fmtFull(gap):'—',sub:gap!==null?(gap>=0?'acima da meta':'abaixo da meta'):'—'},
+  ].map(it=>`<div class="mes-total" style="background:${it.bg}"><div class="mes-total-label">${it.label}</div><div class="mes-total-val">${it.val}</div><div class="mes-total-sub">${it.sub}</div></div>`).join('');
+}
+
+function updateCards(mi){
+  const grid=document.getElementById('mes-kpi-grid');
+  grid.innerHTML='';
+  MODS.forEach(m=>{
+    const meta=DATA[m].meta[mi];
+    const real=DATA[m].real[mi];
+    const p=pc(real,meta);
+    const pVal=p!==null?Math.min(p,1.5):0;
+    const st=stInfo(p);
+    const col=bColor(p);
+    const card=document.createElement('div');
+    card.className='mes-kpi';
+    card.style.borderTop='3px solid '+col;
+    card.innerHTML=`
+      <div class="mes-kpi-top">
+        <span class="mes-kpi-name">${m}</span>
+        <span class="mes-kpi-badge ${st.cls}">${p!==null?Math.round(p*100)+'%':'—'}</span>
+      </div>
+      <div class="mes-kpi-values">
+        <div class="mes-kpi-block">
+          <span class="mes-kpi-block-label">Meta</span>
+          <span class="mes-kpi-block-val" style="color:#4b5563">${fmtK(meta)}</span>
+        </div>
+        <div class="mes-kpi-sep"></div>
+        <div class="mes-kpi-block">
+          <span class="mes-kpi-block-label">Realizado</span>
+          <span class="mes-kpi-block-val" style="color:${real!==null?col:'#9ca3af'};font-size:19px">${real!==null?fmtK(real):'—'}</span>
+        </div>
+      </div>
+      <div class="mes-kpi-bar-bg"><div class="mes-kpi-bar" style="width:${Math.round(Math.min(pVal,1)*100)}%;background:${col}"></div></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+let barInst=null;
+function updateBar(mi){
+  document.getElementById('bar-title').textContent='Meta vs Realizado — '+MESES[mi]+' 2026';
+  const metaArr=MODS.map(m=>DATA[m].meta[mi]);
+  const realArr=MODS.map(m=>DATA[m].real[mi]);
+  if(barInst)barInst.destroy();
+  barInst=new Chart(document.getElementById('barChart'),{
+    type:'bar',
+    data:{labels:MODS,datasets:[
+      {label:'Meta',data:metaArr,backgroundColor:'rgba(59,130,246,0.22)',borderColor:'#3b82f6',borderWidth:1.5,borderRadius:5},
+      {label:'Realizado',data:realArr.map(v=>v!==null?v:0),
+        backgroundColor:realArr.map((v,i)=>{const p=pc(v,metaArr[i]);return p===null?'rgba(209,213,219,0.5)':bColor(p)+'bb';}),
+        borderColor:realArr.map((v,i)=>bColor(pc(v,metaArr[i]))),borderWidth:2,borderRadius:5},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>{
+          const m=MODS[ctx.dataIndex];
+          const meta=DATA[m].meta[mi];
+          const real=DATA[m].real[mi];
+          if(ctx.datasetIndex===1){
+            const p=pc(real,meta);
+            return[' Realizado: '+fmtFull(real??0),' Meta:      '+fmtFull(meta),' Atingimento: '+(p!==null?Math.round(p*100)+'%':'—')];
+          }
+          return' Meta: '+fmtFull(ctx.raw);
+        }}}
+      },
+      scales:{
+        y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'#f3f4f6'}},
+        x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:30,font:{size:11}}}
+      }
+    }
+  });
+}
+
+function buildAcumKPIs(){
+  const tMeta=MODS.reduce((a,m)=>a+DATA[m].meta.reduce((b,v)=>b+v,0),0);
+  const tReal=MODS.reduce((a,m)=>a+realSum(DATA[m].real),0);
+  const p=pc(tReal,tMeta);
+  const gap=tReal-tMeta;
+  const mLanc=MESES.filter((_,i)=>MODS.some(m=>DATA[m].real[i]!==null)).length;
+  const items=[
+    {label:'Meta anual total',val:fmtFull(tMeta),sub:'todas as modalidades'},
+    {label:'Realizado acumulado',val:fmtFull(tReal),sub:mLanc+' meses lançados'},
+    {label:'Atingimento geral',val:p!==null?Math.round(p*100)+'%':'—',sub:'sobre a meta anual'},
+    {label:'Gap acumulado',val:fmtFull(gap),sub:gap>=0?'acima da meta':'abaixo da meta'},
+    {label:'Meses lançados',val:mLanc+' / 12',sub:'jan–mar 2026'},
+    {label:'Modalidades',val:MODS.length,sub:'na base de dados'},
+  ];
+  document.getElementById('acum-kpis').innerHTML=items.map(it=>`<div class="acum-kpi"><div class="acum-kpi-label">${it.label}</div><div class="acum-kpi-val">${it.val}</div><div class="acum-kpi-sub">${it.sub}</div></div>`).join('');
+}
+
+let lineInst=null;
+function buildLine(){
+  const metaTot=MESES.map((_,i)=>MODS.reduce((a,m)=>a+DATA[m].meta[i],0));
+  const realTot=MESES.map((_,i)=>{
+    const v=MODS.reduce((a,m)=>{const r=DATA[m].real[i];return a+(r!==null?r:0);},0);
+    return MODS.some(m=>DATA[m].real[i]!==null)?v:null;
+  });
+  if(lineInst)lineInst.destroy();
+  lineInst=new Chart(document.getElementById('lineChart'),{
+    type:'line',
+    data:{labels:MESES,datasets:[
+      {label:'Meta',data:metaTot,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.07)',borderWidth:2,borderDash:[6,4],pointRadius:4,tension:0.35,fill:true},
+      {label:'Realizado',data:realTot,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.08)',borderWidth:2.5,pointRadius:5,tension:0.35,fill:true,spanGaps:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtFull(ctx.raw)}}},
+      scales:{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'#f3f4f6'}},x:{grid:{display:false},ticks:{autoSkip:false}}}}
+  });
+}
+
+function buildTable(){
+  const tbody=document.getElementById('table-body');
+  MODS.forEach(m=>{
+    const mAnual=DATA[m].meta.reduce((a,v)=>a+v,0);
+    const rAcum=realSum(DATA[m].real);
+    const p=pc(rAcum,mAnual);
+    const gap=rAcum-mAnual;
+    const st=stInfo(p);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><strong>${m}</strong></td>
+      <td class="num">${fmtFull(mAnual)}</td>
+      <td class="num">${fmtFull(rAcum)}</td>
+      <td class="num" style="color:${bColor(p)};font-weight:700">${p!==null?Math.round(p*100)+'%':'—'}</td>
+      <td class="num" style="color:${gap>=0?'#16a34a':'#dc2626'}">${fmtFull(gap)}</td>
+      <td><span class="pill ${st.cls}">${st.label}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateMes(){
+  updateTotais(selMes);
+  updateCards(selMes);
+  updateBar(selMes);
+}
+
+buildSelector();
+updateMes();
+buildAcumKPIs();
+buildLine();
+buildTable();
+</script>
+</body>
+</html>
